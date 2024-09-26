@@ -213,9 +213,9 @@ uint32_t RdmaHw::GetNicIdxOfQp(Ptr<RdmaQueuePair> qp){
 	auto &v = m_rtTable[qp->dip.Get()];
 	if (v.size() > 0){
 		return v[qp->GetHash() % v.size()];
-	}else{
-		NS_ASSERT_MSG(false, "We assume at least one NIC is alive");
 	}
+	NS_ASSERT_MSG(false, "We assume at least one NIC is alive");
+	return 0xffffffff;
 }
 uint64_t RdmaHw::GetQpKey(uint32_t dip, uint16_t sport, uint16_t pg){
 	return ((uint64_t)dip << 32) | ((uint64_t)sport << 16) | (uint64_t)pg;
@@ -298,9 +298,9 @@ uint32_t RdmaHw::GetNicIdxOfRxQp(Ptr<RdmaRxQueuePair> q){
 	auto &v = m_rtTable[q->dip];
 	if (v.size() > 0){
 		return v[q->GetHash() % v.size()];
-	}else{
-		NS_ASSERT_MSG(false, "We assume at least one NIC is alive");
 	}
+	NS_ASSERT_MSG(false, "We assume at least one NIC is alive");
+	return 0xffffffff;
 }
 void RdmaHw::DeleteRxQp(uint32_t dip, uint16_t pg, uint16_t dport){
 	uint64_t key = ((uint64_t)dip << 32) | ((uint64_t)pg << 16) | (uint64_t)dport;
@@ -402,11 +402,11 @@ int RdmaHw::ReceiveCnp(Ptr<Packet> p, CustomHeader &ch){
 		return 0;
 	}
 	uint16_t udpport = ch.cnp.fid; // corresponds to the sport
-	uint8_t ecnbits = ch.cnp.ecnBits;
-	uint16_t qfb = ch.cnp.qfb;
-	uint16_t total = ch.cnp.total;
+	// uint8_t ecnbits = ch.cnp.ecnBits;
+	// uint16_t qfb = ch.cnp.qfb;
+	// uint16_t total = ch.cnp.total;
 
-	uint32_t i;
+	// uint32_t i;
 	// get qp
 	Ptr<RdmaQueuePair> qp = GetQp(ch.sip, udpport, qIndex);
 	if (!qp)
@@ -440,7 +440,7 @@ int RdmaHw::ReceiveAck(Ptr<Packet> p, CustomHeader &ch){
 	uint16_t port = ch.ack.dport;
 	uint32_t seq = ch.ack.seq;
 	uint8_t cnp = (ch.ack.flags >> qbbHeader::FLAG_CNP) & 1;
-	int i;
+	// int i;
 	Ptr<RdmaQueuePair> qp = GetQp(ch.sip, port, qIndex);
 	if (!qp){
 		return 0;
@@ -801,7 +801,7 @@ void RdmaHw::HandleAckHp(Ptr<RdmaQueuePair> qp, Ptr<Packet> p, CustomHeader &ch)
 
 void RdmaHw::UpdateRateHp(Ptr<RdmaQueuePair> qp, Ptr<Packet> p, CustomHeader &ch, bool fast_react){
 	uint32_t next_seq = qp->snd_nxt;
-	bool print = !fast_react || true;
+	// bool print = !fast_react || true;
 	if (qp->hp.m_lastUpdateSeq == 0){ // first RTT
 		qp->hp.m_lastUpdateSeq = next_seq;
 		// store INT
@@ -810,21 +810,21 @@ void RdmaHw::UpdateRateHp(Ptr<RdmaQueuePair> qp, Ptr<Packet> p, CustomHeader &ch
 		for (uint32_t i = 0; i < ih.nhop; i++)
 			qp->hp.hop[i] = ih.hop[i];
 		#if PRINT_LOG
-		if (print){
+		// if (print){
 			printf("%lu %s %08x %08x %u %u [%u,%u,%u]", Simulator::Now().GetTimeStep(), fast_react? "fast" : "update", qp->sip.Get(), qp->dip.Get(), qp->sport, qp->dport, qp->hp.m_lastUpdateSeq, ch.ack.seq, next_seq);
 			for (uint32_t i = 0; i < ih.nhop; i++)
 				printf(" %u %lu %lu", ih.hop[i].GetQlen(), ih.hop[i].GetBytes(), ih.hop[i].GetTime());
 			printf("\n");
-		}
+		// }
 		#endif
 	}else {
 		// check packet INT
 		IntHeader &ih = ch.ack.ih;
 		if (ih.nhop <= IntHeader::maxHop){
 			double max_c = 0;
-			bool inStable = false;
+			// bool inStable = false;
 			#if PRINT_LOG
-			if (print)
+			// if (print)
 				printf("%lu %s %08x %08x %u %u [%u,%u,%u]", Simulator::Now().GetTimeStep(), fast_react? "fast" : "update", qp->sip.Get(), qp->dip.Get(), qp->sport, qp->dport, qp->hp.m_lastUpdateSeq, ch.ack.seq, next_seq);
 			#endif
 			// check each hop
@@ -839,7 +839,7 @@ void RdmaHw::UpdateRateHp(Ptr<RdmaQueuePair> qp, Ptr<Packet> p, CustomHeader &ch
 				}
 				updated[i] = updated_any = true;
 				#if PRINT_LOG
-				if (print)
+				// if (print)
 					printf(" %u(%u) %lu(%lu) %lu(%lu)", ih.hop[i].GetQlen(), qp->hp.hop[i].GetQlen(), ih.hop[i].GetBytes(), qp->hp.hop[i].GetBytes(), ih.hop[i].GetTime(), qp->hp.hop[i].GetTime());
 				#endif
 				uint64_t tau = ih.hop[i].GetTimeDelta(qp->hp.hop[i]);;
@@ -847,7 +847,7 @@ void RdmaHw::UpdateRateHp(Ptr<RdmaQueuePair> qp, Ptr<Packet> p, CustomHeader &ch
 				double txRate = (ih.hop[i].GetBytesDelta(qp->hp.hop[i])) * 8 / duration;
 				double u = txRate / ih.hop[i].GetLineRate() + (double)std::min(ih.hop[i].GetQlen(), qp->hp.hop[i].GetQlen()) * qp->m_max_rate.GetBitRate() / ih.hop[i].GetLineRate() /qp->m_win;
 				#if PRINT_LOG
-				if (print)
+				// if (print)
 					printf(" %.3lf %.3lf", txRate, u);
 				#endif
 				if (!m_multipleRate){
@@ -889,11 +889,11 @@ void RdmaHw::UpdateRateHp(Ptr<RdmaQueuePair> qp, Ptr<Packet> p, CustomHeader &ch
 					if (new_rate > qp->m_max_rate)
 						new_rate = qp->m_max_rate;
 					#if PRINT_LOG
-					if (print)
+					// if (print)
 						printf(" u=%.6lf U=%.3lf dt=%u max_c=%.3lf", qp->hp.u, U, dt, max_c);
 					#endif
 					#if PRINT_LOG
-					if (print)
+					// if (print)
 						printf(" rate:%.3lf->%.3lf\n", qp->hp.m_curRate.GetBitRate()*1e-9, new_rate.GetBitRate()*1e-9);
 					#endif
 				}
@@ -919,11 +919,11 @@ void RdmaHw::UpdateRateHp(Ptr<RdmaQueuePair> qp, Ptr<Packet> p, CustomHeader &ch
 						if (new_rate_per_hop[i] < new_rate)
 							new_rate = new_rate_per_hop[i];
 						#if PRINT_LOG
-						if (print)
+						// if (print)
 							printf(" [%u]u=%.6lf c=%.3lf", i, qp->hp.hopState[i].u, c);
 						#endif
 						#if PRINT_LOG
-						if (print)
+						// if (print)
 							printf(" %.3lf->%.3lf", qp->hp.hopState[i].Rc.GetBitRate()*1e-9, new_rate.GetBitRate()*1e-9);
 						#endif
 					}else{
@@ -980,7 +980,7 @@ void RdmaHw::HandleAckTimely(Ptr<RdmaQueuePair> qp, Ptr<Packet> p, CustomHeader 
 void RdmaHw::UpdateRateTimely(Ptr<RdmaQueuePair> qp, Ptr<Packet> p, CustomHeader &ch, bool us){
 	uint32_t next_seq = qp->snd_nxt;
 	uint64_t rtt = Simulator::Now().GetTimeStep() - ch.ack.ih.ts;
-	bool print = !us;
+	// bool print = !us;
 	if (qp->tmly.m_lastUpdateSeq != 0){ // not first RTT
 		int64_t new_rtt_diff = (int64_t)rtt - (int64_t)qp->tmly.lastRtt;
 		double rtt_diff = (1 - m_tmly_alpha) * qp->tmly.rttDiff + m_tmly_alpha * new_rtt_diff;
@@ -988,7 +988,7 @@ void RdmaHw::UpdateRateTimely(Ptr<RdmaQueuePair> qp, Ptr<Packet> p, CustomHeader
 		bool inc = false;
 		double c = 0;
 		#if PRINT_LOG
-		if (print)
+		if (!us)
 			printf("%lu node:%u rtt:%lu rttDiff:%.0lf gradient:%.3lf rate:%.3lf", Simulator::Now().GetTimeStep(), m_node->GetId(), rtt, rtt_diff, gradient, qp->tmly.m_curRate.GetBitRate() * 1e-9);
 		#endif
 		if (rtt < m_tmly_TLow){
@@ -1026,7 +1026,7 @@ void RdmaHw::UpdateRateTimely(Ptr<RdmaQueuePair> qp, Ptr<Packet> p, CustomHeader
 			}
 		}
 		#if PRINT_LOG
-		if (print){
+		if (!us){
 			printf(" %c %.3lf\n", inc? '^':'v', qp->m_rate.GetBitRate() * 1e-9);
 		}
 		#endif
@@ -1105,7 +1105,7 @@ void RdmaHw::SetPintSmplThresh(double p){
 }
 void RdmaHw::HandleAckHpPint(Ptr<RdmaQueuePair> qp, Ptr<Packet> p, CustomHeader &ch){
        uint32_t ack_seq = ch.ack.seq;
-       if (rand() % 65536 >= pint_smpl_thresh)
+       if ((uint32_t)rand() % 65536 >= pint_smpl_thresh)
                return;
        // update rate
        if (ack_seq > qp->hpccPint.m_lastUpdateSeq){ // if full RTT feedback is ready, do full update

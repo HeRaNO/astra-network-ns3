@@ -56,8 +56,8 @@ TypeId DropTailQueuePacket::GetTypeId (void)
 DropTailQueuePacket::DropTailQueuePacket () :
   Queue (),
   m_packets (),
-  m_bytesInQueue (0),
-  NS_LOG_TEMPLATE_DEFINE("DropTailQueuePacket")
+  NS_LOG_TEMPLATE_DEFINE("DropTailQueuePacket"),
+  m_bytesInQueue (0)
 {
   NS_LOG_FUNCTION_NOARGS ();
 }

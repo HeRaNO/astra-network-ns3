@@ -18,7 +18,6 @@
 * Author: Yuliang Li <yuliangli@g.harvard.com>
 */
 
-#define __STDC_LIMIT_MACROS 1
 #include <stdint.h>
 #include <stdio.h>
 #include "ns3/qbb-net-device.h"
@@ -92,7 +91,7 @@ namespace ns3 {
 		return 0;
 	}
 	int RdmaEgressQueue::GetNextQindex(bool paused[]){
-		bool found = false;
+		// bool found = false;
 		uint32_t qIndex;
 		if (!paused[ack_q_idx] && m_ackQ->GetNPackets() > 0)
 			return -1;
@@ -104,12 +103,12 @@ namespace ns3 {
 		for (qIndex = 1; qIndex <= fcount; qIndex++){
 			uint32_t idx = (qIndex + m_rrlast) % fcount;
 			Ptr<RdmaQueuePair> qp = m_qpGrp->Get(idx);
-			if(qp->GetBytesLeft()<=0){
-				int sender_node = qp->GetSrc();
-				int receiver_node = qp->GetDest();
-				int tag = qp->GetTag();
-				int t_count = qp->GetInitialSize();
-			}
+			// if(qp->GetBytesLeft()<=0){
+			// 	int sender_node = qp->GetSrc();
+			// 	int receiver_node = qp->GetDest();
+			// 	int tag = qp->GetTag();
+			// 	int t_count = qp->GetInitialSize();
+			// }
 			if (!paused[qp->m_pg] && qp->GetBytesLeft() > 0 && !qp->IsWinBound()){
 				if (m_qpGrp->Get(idx)->m_nextAvail.GetTimeStep() > Simulator::Now().GetTimeStep()) //not available now
 					continue;
@@ -124,8 +123,8 @@ namespace ns3 {
 		if (min_finish_id < 0xffffffff){
 			int nxt = min_finish_id;
 			auto &qps = m_qpGrp->m_qps;
-			for (int i = min_finish_id + 1; i < fcount; i++) if (!qps[i]->IsFinished()){
-				if (i == res) // update res to the idx after removing finished qp
+			for (uint32_t i = min_finish_id + 1; i < fcount; i++) if (!qps[i]->IsFinished()){
+				if ((int)i == res) // update res to the idx after removing finished qp
 					res = nxt;
 				qps[nxt] = qps[i];
 				nxt++;
@@ -392,7 +391,7 @@ namespace ns3 {
 				m_node->SwitchReceiveFromDevice(this, packet, ch);
 			}else { // NIC
 				// send to RdmaHw
-				int ret = m_rdmaReceiveCb(packet, ch);
+				m_rdmaReceiveCb(packet, ch);
 				// TODO we may based on the ret do something
 			}
 		}

@@ -155,9 +155,9 @@ TypeId RedQueue::GetTypeId (void)
 RedQueue::RedQueue () :
   Queue (),
   m_packets (),
+  NS_LOG_TEMPLATE_DEFINE("RedQueue"),
   m_bytesInQueue (0),
-  m_hasRedStarted (false),
-  NS_LOG_TEMPLATE_DEFINE("RedQueue")
+  m_hasRedStarted (false)
 {
   NS_LOG_FUNCTION_NOARGS ();
   m_uv = CreateObject<UniformRandomVariable> ();

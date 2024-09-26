@@ -395,9 +395,9 @@ void QbbHelper::QpDequeueCallback(FILE *file, Ptr<QbbNetDevice> dev, Ptr<const P
 }
 
 void QbbHelper::EnableTracingDevice(FILE *file, Ptr<QbbNetDevice> nd){
-	uint32_t nodeid = nd->GetNode ()->GetId ();
-	uint32_t deviceid = nd->GetIfIndex ();
-	std::ostringstream oss;
+	// uint32_t nodeid = nd->GetNode ()->GetId ();
+	// uint32_t deviceid = nd->GetIfIndex ();
+	// std::ostringstream oss;
 
 	#if 1
 	nd->TraceConnectWithoutContext("MacRx", MakeBoundCallback(&QbbHelper::MacRxDetailCallback, file, nd));

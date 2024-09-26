@@ -300,11 +300,11 @@ operator*(const double& c, const DataRate& d)
 	return DataRate(d.GetBitRate()*c);
 };
 
-DataRate
-operator*(const DataRate& d, const double& c)
-{
-	return DataRate(d.GetBitRate()*c);
-};
+// DataRate
+// operator*(const DataRate& d, const double& c)
+// {
+// 	return DataRate(d.GetBitRate()*c);
+// };
 
 DataRate
 operator/(const DataRate& d, const double& c)
